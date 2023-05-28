@@ -47,7 +47,7 @@ contract TikToken is ERC20, Ownable {
         _mint(msg.sender, initialMintAmount);
     }
 
-    function calculateRewards(uint256 followers) private returns (uint256) {
+    function calculateRewards(uint256 followers) private view returns (uint256) {
         uint256 baseReward = _allUsersEarn ? _currentReward : 0; //if all users earn followers get rounded up to the next thousand so even with 0 followers you earn something if not the users with 1 follower set or more will earn
         uint256 amountToMint = (followers / _followerSet) * _currentReward + baseReward; //Rewards calculated based on follower count
         uint256 amountToHalving = _remainingSupply - _nextHalving; //calculates token supply until _nextHalving
@@ -75,7 +75,7 @@ contract TikToken is ERC20, Ownable {
     // Mint function allows the owner of the contract to mint tokens
     // It gives out a large amount of tokens to early adopters and gradually reduces the reward as more tokens are minted
     // Each user can earn tokens based on the number of their followers and how many halving cycles have happened
-    function mint(address account, uint256 followers, uint256 id) external onlyOwner{
+    function mint(address account, uint256 followers, uint256 id) public onlyOwner{
 
         require(_remainingSupply > 0, "No more tokens to mint"); //Ensures supply exists
         //Skip this iteration if user has already minted tokens or does not have enough followers
