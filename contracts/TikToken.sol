@@ -55,20 +55,16 @@ contract TikToken is ERC20, Ownable {
 
         //Ensures a user with too many followers doesn't earn too much unless halving is complete
         if (amountToHalving <= amountToMint && _currentReward > _minReward) {
+            uint256 preHalvingReward = amountToMint;
             amountToMint = amountToHalving; //mint the remaining tokens in this halving cycle
-            uint256 rewardedFollowers = amountToMint / _currentReward;
-            uint256 remainingFollowers = followers - rewardedFollowers;
-            uint256 nextReward = _currentReward / _rewardReduction;
-            uint256 nextBase = baseReward / _rewardReduction;
+            uint256 postHalvingReward = (preHalvingReward - amountToMint) / _rewardReduction; //mint remaining reward at the new _currentReward
             uint256 rewardMax = _nextHalving / 2;
 
-            uint256 additionalReward = (remainingFollowers / _followerSet) * nextReward + nextBase ; //calculate additional reward for remainingFollowers at the next halving rate
-
             //ensure the remaining reward doesn't create a double halving event, this will also limit a potential exploit
-            if (additionalReward >= rewardMax) {
-                additionalReward = rewardMax - _currentReward; //create a buffer of 1 reward until the next halving, unfortunately this user will have rewards capped off, this can only happen to creators with mote than 10M followers.
+            if (postHalvingReward >= rewardMax) {
+                postHalvingReward = rewardMax - _currentReward; //create a buffer of 1 reward until the next halving, unfortunately this user will have rewards capped off, this can only happen to creators with mote than 10M followers.
             }
-            amountToMint += additionalReward; //adds the additional reward to the mint amount
+            amountToMint += postHalvingReward; //adds the additional reward to the mint amount
         }
         return amountToMint;
     }
@@ -164,8 +160,8 @@ contract TikToken is ERC20, Ownable {
 
     // Allows me to send the contract to another wallet debating on leaving this out for immutability 
     // Could be good if the wallet ever became compromised. Look into multi-sig for security.
-    function transferOwnership(address newOwner) public onlyOwner {
+    function transferTIKOwnership(address newOwner) public onlyOwner {
         require(newOwner != address(0), "New owner is the zero address");
         transferOwnership(newOwner);
-    }
+    } 
 }
