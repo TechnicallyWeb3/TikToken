@@ -14,15 +14,20 @@ contract TikToken is ERC20, Ownable {
     // _maxSupply represents the total supply of TikTokens that will ever exist
     // _initialSupply represents the initial non-owner supply at the time of contract deployment
     // _minReward represents the minimum reward that will be given out for minting tokens
+    // _followerSet is how many followers are considered a set, in my initial concept it was 1000
     // _remainingSupply is a rolling value of the remaining TikTokens that can be minted
-    // _currentReward represents the current reward that is given for each 1000 followers
+    // _currentReward represents the current reward that is given for each set of followers
     // _halvingCount keeps track of the number of times the reward has been halved
+    // _allUsersEarn determines whether the follower is rounded up or down to the nearest set of followers
     uint256 private constant _maxSupply = 1 * 10**24;
     uint256 private constant _initialSupply = 0.8192 * 10**24;
     uint256 private constant _minReward = 1;
+    uint256 private _followerSet = 1000;
     uint256 private _remainingSupply = _initialSupply;
     uint256 private _currentReward = 0.00001 * 10**24;
     uint256 private _halvingCount = 1;
+    bool private _allUsersEarn = true;
+
 
     // Mapping to keep track of each unique TikTok user ID that has minted tokens
     mapping(uint256 => bool) private _minted;
@@ -41,18 +46,20 @@ contract TikToken is ERC20, Ownable {
 
         require(_remainingSupply > 0, "No more tokens to mint"); //Ensures supply exists
         require(!_minted[id], "User has already minted tokens"); //Checks user hasn't already minted
+        require(followers >= _followerSet || _allUsersEarn, "User doesn't have enough followers to mint any tokens"); //Checks if the user will mint any tokens
 
-        uint256 amountToMint = (followers / 1000) * _currentReward + _currentReward; //Rewards calculated based on follower count
+        uint256 baseReward = _allUsersEarn ? _currentReward : 0; //if all users earn followers get rounded up to the next thousand so even with 0 followers you earn something if not the users with 1 follower set or more will earn
+        uint256 amountToMint = (followers / _followerSet) * _currentReward + baseReward; //Rewards calculated based on follower count
         uint256 nextHalving = _initialSupply / (2 ** _halvingCount); //calculates next halving amount
         uint256 amountToHalving = _remainingSupply - nextHalving; //calculates token supply until nextHalving
 
         //Ensures a user with too many followers doesn't earn too much unless halving is complete
         if (amountToHalving <= amountToMint && _currentReward > _minReward) {
             amountToMint = amountToHalving; //mint the remaining tokens in this halving cycle
-            uint256 remainingFollowers = followers - (amountToMint * 1000 / (_currentReward)); //calculate any followers not compensated
-            uint256 additionalReward = (remainingFollowers / 1000) * (_currentReward / 2) + (_currentReward / 2) ; //calculate additional reward for remainingFollowers at the next halving rate
+            uint256 remainingFollowers = followers - ((amountToMint - baseReward) * _followerSet / (_currentReward)); //calculate any followers not compensated
+            uint256 additionalReward = (remainingFollowers / _followerSet) * (_currentReward / 2) + (baseReward / 2) ; //calculate additional reward for remainingFollowers at the next halving rate
 
-            //ensure the remaining reward doesn't create a double halving event
+            //ensure the remaining reward doesn't create a double halving event, this will also limit a potential exploit
             if (additionalReward >= nextHalving / 2) {
                 additionalReward = (nextHalving / 2) - _currentReward; //create a buffer of 1 reward until the next halving, unfortunately this user will have rewards capped off, this can only happen to creators with mote than 10M followers.
             }
@@ -69,7 +76,7 @@ contract TikToken is ERC20, Ownable {
         _remainingSupply -= amountToMint;
         _minted[id] = true;
 
-        //performs a halving function, adding a new 0 after the decimal place to the current reward per 1000 followers assuming halving hasn't maxed out.
+        //performs a halving function, adding a new 0 after the decimal place to the current reward per follower set assuming halving hasn't maxed out.
         if (_remainingSupply <= nextHalving && _currentReward > _minReward) {
             _currentReward /= 10; 
             _halvingCount++;
@@ -82,19 +89,25 @@ contract TikToken is ERC20, Ownable {
         require(accounts.length == followers.length, "Mismatched input arrays");
         require(accounts.length == ids.length, "Mismatched input arrays");
 
+        //loop over all items in the batch
         for (uint256 i = 0; i < accounts.length; i++) {
-            require(_remainingSupply > 0, "No more tokens to mint"); //Ensures supply exists
-            require(!_minted[ids[i]], "User has already minted tokens"); //Checks user hasn't already minted
 
-            uint256 amountToMint = (followers[i] / 1000) * _currentReward + _currentReward; //Rewards calculated based on follower count
+            require(_remainingSupply > 0, "No more tokens to mint"); //Ensures supply exists
+            //Skip this iteration if user has already minted tokens or does not have enough followers
+            if(_minted[ids[i]] || (followers[i] < _followerSet && !_allUsersEarn)){
+                continue;
+            }
+
+            uint256 baseReward = _allUsersEarn ? _currentReward : 0; //if all users earn followers get rounded up to the next thousand so even with 0 followers you earn something if not the users with 1 follower set or more will earn
+            uint256 amountToMint = (followers[i] / _followerSet) * _currentReward + baseReward; //Rewards calculated based on follower count
             uint256 nextHalving = _initialSupply / (2 ** _halvingCount); //calculates next halving amount
             uint256 amountToHalving = _remainingSupply - nextHalving; //calculates token supply until nextHalving
 
             //Ensures a user with too many followers doesn't earn too much unless halving is complete
             if (amountToHalving <= amountToMint && _currentReward > _minReward) {
                 amountToMint = amountToHalving; //mint the remaining tokens in this halving cycle
-                uint256 remainingFollowers = followers[i] - (amountToMint * 1000 / (_currentReward)); //calculate any followers not compensated
-                uint256 additionalReward = (remainingFollowers / 1000) * (_currentReward / 2) + (_currentReward / 2); //calculate additional reward for remainingFollowers at the next halving rate
+                uint256 remainingFollowers = followers[i] - (amountToMint * _followerSet / (_currentReward)); //calculate any followers not compensated
+                uint256 additionalReward = (remainingFollowers / _followerSet) * (_currentReward / 2) + (baseReward / 2); //calculate additional reward for remainingFollowers at the next halving rate
 
                 //ensure the remaining reward doesn't create a double halving event
                 if (additionalReward >= nextHalving / 2) {
@@ -113,7 +126,7 @@ contract TikToken is ERC20, Ownable {
             _remainingSupply -= amountToMint;
             _minted[ids[i]] = true;
 
-            //performs a halving function, adding a new 0 after the decimal place to the current reward per 1000 followers assuming halving hasn't maxed out.
+            //performs a halving function, adding a new 0 after the decimal place to the current reward per follower set assuming halving hasn't maxed out.
             if (_remainingSupply <= nextHalving && _currentReward > _minReward) {
                 _currentReward /= 10; 
                 _halvingCount++;
@@ -127,7 +140,7 @@ contract TikToken is ERC20, Ownable {
     }
 
     function currentReward() external view returns (uint256) {
-        return _currentReward; //provides the the reward value per 1000 followers also the minimum reward
+        return _currentReward; //provides the the reward value per follower set also the minimum reward
     }
 
     function hasMinted(uint256 id) external view returns (bool) {
@@ -138,6 +151,23 @@ contract TikToken is ERC20, Ownable {
         return _halvingCount - 1; //provides the actual number of halvings the rewards have gone through
     }
     
+    //Should ask my community if I should make this immutable or keep control over this, consider using governance on a future version
+    // // Set function allows the owner of the contract to change the _allUsersEarn variable
+    // function setAllUsersEarn(bool value) external onlyOwner {
+    //     _allUsersEarn = value;
+    // }
+
+    // // Set function allows the owner of the contract to change the _followerSet variable
+    // function setFollowerSet(uint256 value) external onlyOwner {
+    //     _followerSet = value;
+    // }
+
+    // Allows me to send the contract to another wallet debating on leaving this out for immutability
+    // function transferOwnership(address newOwner) public onlyOwner {
+    //     require(newOwner != address(0), "New owner is the zero address");
+    //     transferOwnership(newOwner);
+    // }
+
     // Override the decimals function from the ERC20 contract to return a value of 24 instead of the default 18
     function decimals() public view virtual override returns (uint8) {
         return 24;
