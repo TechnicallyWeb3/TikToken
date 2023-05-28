@@ -35,6 +35,11 @@ contract TikToken is ERC20, Ownable {
     // Mapping to keep track of each unique TikTok user ID that has minted tokens
     mapping(uint256 => bool) private _minted;
 
+    // Contract Events
+    event Minted(address account, uint256 amount, uint256 tiktokId, uint256 followers);
+    event HalvingOccurred(uint256 halvingCount, uint256 currentReward, uint256 remainingSupply);
+
+
     // Constructor function that initializes the TikToken contract
     // Mints initial tokens and sends them to the contract owner
     constructor() ERC20("TikToken", "TIK") {
@@ -42,15 +47,7 @@ contract TikToken is ERC20, Ownable {
         _mint(msg.sender, initialMintAmount);
     }
 
-    // Mint function allows the owner of the contract to mint tokens
-    // It gives out a large amount of tokens to early adopters and gradually reduces the reward as more tokens are minted
-    // Each user can earn tokens based on the number of their followers and how many halving cycles have happened
-    function mint(address account, uint256 followers, uint256 id) external onlyOwner{
-
-        require(_remainingSupply > 0, "No more tokens to mint"); //Ensures supply exists
-        require(!_minted[id], "User has already minted tokens"); //Checks user hasn't already minted
-        require(followers >= _followerSet || _allUsersEarn, "User doesn't have enough followers to mint any tokens"); //Checks if the user will mint any tokens
-
+    function calculateRewards(uint256 followers) private returns (uint256) {
         uint256 baseReward = _allUsersEarn ? _currentReward : 0; //if all users earn followers get rounded up to the next thousand so even with 0 followers you earn something if not the users with 1 follower set or more will earn
         uint256 amountToMint = (followers / _followerSet) * _currentReward + baseReward; //Rewards calculated based on follower count
         uint256 amountToHalving = _remainingSupply - _nextHalving; //calculates token supply until _nextHalving
@@ -62,15 +59,31 @@ contract TikToken is ERC20, Ownable {
             uint256 remainingFollowers = followers - rewardedFollowers;
             uint256 nextReward = _currentReward / _rewardReduction;
             uint256 nextBase = baseReward / _rewardReduction;
+            uint256 rewardMax = _nextHalving / 2;
 
             uint256 additionalReward = (remainingFollowers / _followerSet) * nextReward + nextBase ; //calculate additional reward for remainingFollowers at the next halving rate
 
             //ensure the remaining reward doesn't create a double halving event, this will also limit a potential exploit
-            if (additionalReward >= _nextHalving / 2) {
-                additionalReward = (_nextHalving / 2) - _currentReward; //create a buffer of 1 reward until the next halving, unfortunately this user will have rewards capped off, this can only happen to creators with mote than 10M followers.
+            if (additionalReward >= rewardMax) {
+                additionalReward = rewardMax - _currentReward; //create a buffer of 1 reward until the next halving, unfortunately this user will have rewards capped off, this can only happen to creators with mote than 10M followers.
             }
             amountToMint += additionalReward; //adds the additional reward to the mint amount
         }
+        return amountToMint;
+    }
+
+    // Mint function allows the owner of the contract to mint tokens
+    // It gives out a large amount of tokens to early adopters and gradually reduces the reward as more tokens are minted
+    // Each user can earn tokens based on the number of their followers and how many halving cycles have happened
+    function mint(address account, uint256 followers, uint256 id) external onlyOwner{
+
+        require(_remainingSupply > 0, "No more tokens to mint"); //Ensures supply exists
+        //Skip this iteration if user has already minted tokens or does not have enough followers
+            if(_minted[id] || (followers < _followerSet && !_allUsersEarn)){
+                return;
+            }
+
+        uint256 amountToMint = calculateRewards(followers);
 
         //reduces supply to remaining supply
         if (_remainingSupply < amountToMint) {
@@ -81,12 +94,14 @@ contract TikToken is ERC20, Ownable {
         _mint(account, amountToMint);
         _remainingSupply -= amountToMint;
         _minted[id] = true;
+        emit Minted(account, amountToMint, id, followers);
 
         //performs a halving function, adding a new 0 after the decimal place to the current reward per follower set assuming halving hasn't maxed out.
         if (_remainingSupply <= _nextHalving && _currentReward >= _rewardReduction) {
             _currentReward /= _rewardReduction; 
             _halvingCount++;
             _nextHalving = _initialSupply / (2 ** _halvingCount);
+            emit HalvingOccurred(_halvingCount, _currentReward, _remainingSupply);
         }
         if (_currentReward < _minReward) {
             _currentReward = _minReward;
@@ -102,52 +117,8 @@ contract TikToken is ERC20, Ownable {
         //loop over all items in the batch
         for (uint256 i = 0; i < accounts.length; i++) {
 
-            require(_remainingSupply > 0, "No more tokens to mint"); //Ensures supply exists
-            //Skip this iteration if user has already minted tokens or does not have enough followers
-            if(_minted[ids[i]] || (followers[i] < _followerSet && !_allUsersEarn)){
-                continue;
-            }
+            mint(accounts[i], followers[i], ids[i]);
 
-            uint256 baseReward = _allUsersEarn ? _currentReward : 0; //if all users earn followers get rounded up to the next thousand so even with 0 followers you earn something if not the users with 1 follower set or more will earn
-            uint256 amountToMint = (followers[i] / _followerSet) * _currentReward + baseReward; //Rewards calculated based on follower count
-            uint256 amountToHalving = _remainingSupply - nextHalving; //calculates token supply until nextHalving
-
-            //Ensures a user with too many followers doesn't earn too much unless halving is complete
-            if (amountToHalving <= amountToMint && _currentReward > _minReward) {
-                amountToMint = amountToHalving; //mint the remaining tokens in this halving cycle
-                uint256 rewardedFollowers = amountToMint / _currentReward;
-                uint256 remainingFollowers = followers[i] - rewardedFollowers;
-                uint256 nextReward = _currentReward / _rewardReduction;
-                uint256 nextBase = baseReward / _rewardReduction;
-
-                uint256 additionalReward = (remainingFollowers / _followerSet) * nextReward + nextBase ; //calculate additional reward for remainingFollowers at the next halving rate
-
-                //ensure the remaining reward doesn't create a double halving event, this will also limit a potential exploit
-                if (additionalReward >= _nextHalving / 2) {
-                    additionalReward = (_nextHalving / 2) - _currentReward; //create a buffer of 1 reward until the next halving, unfortunately this user will have rewards capped off, this can only happen to creators with mote than 10M followers.
-                }
-                amountToMint += additionalReward; //adds the additional reward to the mint amount
-            }
-
-            //reduces supply to remaining supply
-            if (_remainingSupply < amountToMint) {
-                amountToMint = _remainingSupply;
-            }
-
-            //mint the tokens, adjust remaining supply and log the user id
-            _mint(accounts[i], amountToMint);
-            _remainingSupply -= amountToMint;
-            _minted[ids[i]] = true;
-
-            //performs a halving function, adding a new 0 after the decimal place to the current reward per follower set assuming halving hasn't maxed out.
-            if (_remainingSupply <= _nextHalving && _currentReward >= _rewardReduction) {
-                _currentReward /= _rewardReduction; 
-                _halvingCount++;
-                _nextHalving = _initialSupply / (2 ** _halvingCount);
-            }
-            if (_currentReward < _minReward) {
-                _currentReward = _minReward;
-            }
         }
     }
 
@@ -171,6 +142,8 @@ contract TikToken is ERC20, Ownable {
     function getNextHalving() external view returns (uint256) {
         return _nextHalving; //provides the next halving
     }
+
+    
     
     //Should ask my community if I should make this immutable or keep control over this, consider using governance on a future version
     // // Set function allows the owner of the contract to change the _allUsersEarn variable
