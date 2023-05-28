@@ -7,7 +7,8 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-// Define the contract named "TikToken" which extends the ERC20 and Ownable contracts
+// Define the contract named "TikToken" which extends the ERC20 and Ownable contracts using a 18 decimal token
+// Depreciated the 24 decimal contract for the 18 decimal contract in the interest of maximum wallet compatibility
 contract TikToken is ERC20, Ownable {
 
     // Define several private constants and variables related to the tokenomics of TikToken
@@ -20,17 +21,17 @@ contract TikToken is ERC20, Ownable {
     // _halvingCount keeps track of the number of times the reward has been halved
     // _nextHalving keeps track of the next halving supply amount
     // _allUsersEarn determines whether the follower is rounded up or down to the nearest set of followers
-    uint256 private constant _maxSupply = 1 * 10**24;
-    uint256 private constant _initialSupply = 0.8192 * 10**24;
+    uint256 private constant _maxSupply = 1 * 10**18;
+    uint256 private constant _initialSupply = 0.8192 * 10**18;
     uint256 private constant _minReward = 1;
     uint256 private constant _followerSet = 1000;
     uint256 private constant _rewardReduction = 10;
+    bool private constant _allUsersEarn = true;
     uint256 private _remainingSupply = _initialSupply;
-    uint256 private _currentReward = 0.00001 * 10**24;
+    uint256 private _currentReward = 0.00001 * 10**18;
     uint256 private _halvingCount = 1;
     uint256 private _nextHalving = _initialSupply / (2 ** _halvingCount);
-    bool private constant _allUsersEarn = true;
-
+    uint256 private _userCounter = 0;
 
     // Mapping to keep track of each unique TikTok user ID that has minted tokens
     mapping(uint256 => bool) private _minted;
@@ -94,6 +95,7 @@ contract TikToken is ERC20, Ownable {
         _mint(account, amountToMint);
         _remainingSupply -= amountToMint;
         _minted[id] = true;
+        _userCounter++;
         emit Minted(account, amountToMint, id, followers);
 
         //performs a halving function, adding a new 0 after the decimal place to the current reward per follower set assuming halving hasn't maxed out.
@@ -143,9 +145,13 @@ contract TikToken is ERC20, Ownable {
         return _nextHalving; //provides the next halving
     }
 
+    function getUserCounter() external view returns (uint256) {
+        return _userCounter;
+    }    
     
-    
-    //Should ask my community if I should make this immutable or keep control over this, consider using governance on a future version
+    // Unacceptable! This gives the contract owner way too much unilateral control! This must be done as
+    // Governance using the community and only after the 2nd halving to ensure fair distribution before
+    // such impactful changes can be made to the contract.
     // // Set function allows the owner of the contract to change the _allUsersEarn variable
     // function setAllUsersEarn(bool value) external onlyOwner {
     //     _allUsersEarn = value;
@@ -156,14 +162,10 @@ contract TikToken is ERC20, Ownable {
     //     _followerSet = value;
     // }
 
-    // Allows me to send the contract to another wallet debating on leaving this out for immutability
-    // function transferOwnership(address newOwner) public onlyOwner {
-    //     require(newOwner != address(0), "New owner is the zero address");
-    //     transferOwnership(newOwner);
-    // }
-
-    // Override the decimals function from the ERC20 contract to return a value of 24 instead of the default 18
-    function decimals() public view virtual override returns (uint8) {
-        return 24;
+    // Allows me to send the contract to another wallet debating on leaving this out for immutability 
+    // Could be good if the wallet ever became compromised. Look into multi-sig for security.
+    function transferOwnership(address newOwner) public onlyOwner {
+        require(newOwner != address(0), "New owner is the zero address");
+        transferOwnership(newOwner);
     }
 }
