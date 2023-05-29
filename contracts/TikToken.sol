@@ -84,7 +84,7 @@ contract TikToken is ERC20, Ownable {
 
         //reduces supply to remaining supply
         if (_remainingSupply < amountToMint) {
-            amountToMint = _remainingSupply;
+            amountToMint = _remainingSupply-1;
         }
 
         //mint the tokens, adjust remaining supply and log the user id
@@ -103,6 +103,7 @@ contract TikToken is ERC20, Ownable {
             // Checks if this is last halving and requires users have at least _followerSet
             if (_currentReward <= _minReward) {
                 _allUsersEarn = false;
+                _nextHalving = 0;
             }
             
             emit HalvingOccurred(_halvingCount, _currentReward, _remainingSupply);
@@ -166,8 +167,8 @@ contract TikToken is ERC20, Ownable {
 
     // Allows me to send the contract to another wallet debating on leaving this out for immutability 
     // Could be good if the wallet ever became compromised. Look into multi-sig for security.
-    function transferTIKOwnership(address newOwner) public onlyOwner {
-        require(newOwner != address(0), "New owner is the zero address");
-        transferOwnership(newOwner);
-    } 
+    // function transferTIKOwnership(address newOwner) public onlyOwner {
+    //     require(newOwner != address(0), "New owner is the zero address");
+    //     transferOwnership(newOwner);
+    // } 
 }
