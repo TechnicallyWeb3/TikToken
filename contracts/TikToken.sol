@@ -26,7 +26,7 @@ contract TikToken is ERC20, Ownable {
     uint256 private constant _minReward = 1;
     uint256 private constant _followerSet = 1000;
     uint256 private constant _rewardReduction = 10;
-    bool private constant _allUsersEarn = true;
+    bool private _allUsersEarn = true;
     uint256 private _remainingSupply = _initialSupply;
     uint256 private _currentReward = 0.00001 * 10**18;
     uint256 private _halvingCount = 1;
@@ -99,6 +99,12 @@ contract TikToken is ERC20, Ownable {
             _currentReward /= _rewardReduction; 
             _halvingCount++;
             _nextHalving = _initialSupply / (2 ** _halvingCount);
+
+            // Checks if this is last halving and requires users have at least _followerSet
+            if (_currentReward <= _minReward) {
+                _allUsersEarn = false;
+            }
+            
             emit HalvingOccurred(_halvingCount, _currentReward, _remainingSupply);
         }
         if (_currentReward < _minReward) {
