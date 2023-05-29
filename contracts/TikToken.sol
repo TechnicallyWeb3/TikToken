@@ -69,8 +69,9 @@ contract TikToken is ERC20, Ownable {
         return amountToMint;
     }
 
-    // Mint function allows the owner of the contract to mint tokens
-    // It gives out a large amount of tokens to early adopters and gradually reduces the reward as more tokens are minted
+    // Mint function allows the owner of the contract to mint tokens this is a owner function and this gives rise to a potential abuse of the function
+    // This type of control means you must have alot of trust in the project and contract's owner espescially since there are no built-in follower limits
+    // It gives out a large amount of tokens to early adopters and gradually reduces the reward as more tokens are minted based on an agressive 1/10th halving policy
     // Each user can earn tokens based on the number of their followers and how many halving cycles have happened
     function mint(address account, uint256 followers, uint256 id) public onlyOwner{
 
