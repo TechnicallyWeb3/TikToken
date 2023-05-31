@@ -1,0 +1,28 @@
+{
+  "name": "tiktoken",
+  "version": "1.0.0",
+  "description": "TikTok token rewarded for follower count",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TechnicallyWeb3/TikToken.git"
+  },
+  "keywords": [
+    "TikTok"
+  ],
+  "author": "TechnicallyWeb3",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TechnicallyWeb3/TikToken/issues"
+  },
+  "homepage": "https://github.com/TechnicallyWeb3/TikToken#readme",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.0"
+  }
+}
