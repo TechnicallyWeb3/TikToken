@@ -97,7 +97,7 @@ contract TikToken is ERC20, Ownable {
 
         //reduces supply to remaining supply
         if (_remainingSupply < amountToMint) {
-            amountToMint = _remainingSupply-1;
+            amountToMint = _remainingSupply;
         }
 
         //mint the tokens, adjust remaining supply and log the user id
