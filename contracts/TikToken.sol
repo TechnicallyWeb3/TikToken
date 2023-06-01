@@ -179,7 +179,7 @@ contract TikToken is ERC20, Ownable {
         return _userIDs[account];
     }
 
-    function getUserAccount(string id) {
+    function getUserAccount(string id) external view returns (address) {
         return _userAddress[id];
     }
     
