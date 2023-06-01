@@ -34,16 +34,16 @@ contract TikToken is ERC20, Ownable {
     uint256 private _userCounter = 0;
 
     // Mapping to keep track of each unique TikTok user ID that has minted tokens
-    mapping(uint256 => bool) private _minted;
+    mapping(string => bool) private _minted;
     // Mapping to associate user addresses with their IDs
     mapping(address => string[]) private _userIDs;
     // Mapping to associate user ID with their addresses for the TikTok Domain Service
-    mapping(uint256 => address) private _userAddress;
+    mapping(string => address) private _userAddress;
 
     // Contract Events
-    event Minted(address account, uint256 amount, string tiktokId, uint256 followers);
+    event Minted(address account, uint256 amount, string id, uint256 followers);
     event HalvingOccurred(uint256 halvingCount, uint256 currentReward, uint256 remainingSupply);
-
+    event AddressUpdated(string id, address oldAccount, address newAccount);
 
     // Constructor function that initializes the TikToken contract
     // Mints initial tokens and sends them to the contract owner
@@ -89,7 +89,7 @@ contract TikToken is ERC20, Ownable {
     // Fortunately there's a public getter function to audit the minting so it's associated with a user ID and anyone can check the minting.
     // It gives out a large amount of tokens to early adopters and gradually reduces the reward as more tokens are minted based on an agressive 1/10th halving policy
     // Each user can earn tokens based on the number of their followers and how many halving cycles have happened
-    function mint(address account, uint256 followers, string id) public onlyOwner{
+    function mint(address account, uint256 followers, string calldata id) public onlyOwner{
 
         require(_remainingSupply > 0, "No more tokens to mint"); //Ensures supply exists
         require(!_minted[id], "User has already minted");
@@ -107,9 +107,10 @@ contract TikToken is ERC20, Ownable {
         _remainingSupply -= amountToMint;
         // Flag user ID as minted to prevent multiple minting
         _minted[id] = true;
-        // Add the ID to the user's list of IDs
+        // Add the ID to the user's list of IDs and register a Web3 address
         _userIDs[account].push(id);
         _userCounter++;
+        updateAddress(id, account);
         emit Minted(account, amountToMint, id, followers);
 
         //performs a halving function, adding a new 0 after the decimal place to the current reward per follower set assuming halving hasn't maxed out.
@@ -133,7 +134,7 @@ contract TikToken is ERC20, Ownable {
 
     // Batch mint function allows the contract owner to mint tokens for multiple users at once
     // This function can save gas compared to calling the mint function individually for each user
-    function batchMint(address[] calldata accounts, uint256[] calldata followers, uint256[] calldata ids) external onlyOwner {
+    function batchMint(address[] calldata accounts, uint256[] calldata followers, string[] calldata ids) external onlyOwner {
         require(accounts.length == followers.length, "Mismatched input arrays");
         require(accounts.length == ids.length, "Mismatched input arrays");
 
@@ -146,7 +147,8 @@ contract TikToken is ERC20, Ownable {
     }
 
     // Update function allows users to update their wallet for the TikTok Name Service
-    function updateAddress(string id, address account) external onlyOwner() {
+    function updateAddress(string calldata id, address account) public onlyOwner() {
+        emit AddressUpdated(id, _userAddress[id], account);
         _userAddress[id] = account;
     }
 
@@ -159,7 +161,7 @@ contract TikToken is ERC20, Ownable {
         return _currentReward; //provides the the reward value per follower set also the minimum reward
     }
 
-    function hasMinted(string id) external view returns (bool) {
+    function hasMinted(string calldata id) external view returns (bool) {
         return _minted[id]; //determines if the user has minted already
     }
 
@@ -175,11 +177,11 @@ contract TikToken is ERC20, Ownable {
         return _userCounter;
     }
 
-    function getUserIDs(address account) external view returns (uint256[] memory) {
+    function getUserIDs(address account) external view returns (string[] memory) {
         return _userIDs[account];
     }
 
-    function getUserAccount(string id) external view returns (address) {
+    function getUserAccount(string calldata id) external view returns (address) {
         return _userAddress[id];
     }
     
