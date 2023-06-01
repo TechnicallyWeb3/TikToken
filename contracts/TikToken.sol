@@ -148,7 +148,8 @@ contract TikToken is ERC20, Ownable {
     // Update function allows users to update their wallet for the TikTok Name Service
     // This will allow a user to update the wallet associated with their ID, in future this could enable sending crypto tokens to a handle instead of an address
     function updateAddress(string calldata id, address account) public onlyOwner() {
-        emit AddressUpdated(id, _userAddress[id], account);
+        address oldAccount = _userAddress[id];
+        emit AddressUpdated(id, oldAddress, account);
         _userAddress[id] = account;
         _userIDs[account].push(id);
     }
@@ -190,7 +191,8 @@ contract TikToken is ERC20, Ownable {
     
     // For now these features must remain immutable. Commented out because this gives the contract owner 
     // way too much unilateral control! This must be done as Governance using the community and only after 
-    // the 3rd  halving to ensure fair distribution before such impactful changes can be made to the contract.
+    // the 3rd-5th halving to ensure fair distribution before such impactful changes can be made to the contract.
+    // should evaluate how this roll out works before adding governance into a cantract.
     // // Set function allows the owner of the contract to change the _allUsersEarn variable
     // function setAllUsersEarn(bool value) external onlyOwner {
     //     _allUsersEarn = value;
