@@ -108,7 +108,6 @@ contract TikToken is ERC20, Ownable {
         // Flag user ID as minted to prevent multiple minting
         _minted[id] = true;
         // Add the ID to the user's list of IDs and register a Web3 address
-        _userIDs[account].push(id);
         _userCounter++;
         updateAddress(id, account);
         emit Minted(account, amountToMint, id, followers);
@@ -147,12 +146,15 @@ contract TikToken is ERC20, Ownable {
     }
 
     // Update function allows users to update their wallet for the TikTok Name Service
+    // This will allow a user to update the wallet associated with their ID, in future this could enable sending crypto tokens to a handle instead of an address
     function updateAddress(string calldata id, address account) public onlyOwner() {
         emit AddressUpdated(id, _userAddress[id], account);
         _userAddress[id] = account;
+        _userIDs[account].push(id);
     }
 
-    // Getter functions to view the remaining supply of tokens, the current reward, the user's minted status, and the number of halvings, the IDs associated with a user's address and the address associated with an address.
+    // Getter functions to view the remaining supply of tokens, the current reward, the user's minted status, and the number of halvings, 
+    // the IDs associated with a user's address and the address associated with an address.
     function remainingSupply() external view returns (uint256) {
         return _remainingSupply; //amount of TikTokens remaining to be minted
     }
@@ -181,13 +183,14 @@ contract TikToken is ERC20, Ownable {
         return _userIDs[account];
     }
 
+    // This getter function enables TDS for wallets wanting to use TikTok ID as an address
     function getUserAccount(string calldata id) external view returns (address) {
         return _userAddress[id];
     }
     
-    // Unacceptable! This gives the contract owner way too much unilateral control! This must be done as
-    // Governance using the community and only after the 2nd halving to ensure fair distribution before
-    // such impactful changes can be made to the contract.
+    // For now these features must remain immutable. Commented out because this gives the contract owner 
+    // way too much unilateral control! This must be done as Governance using the community and only after 
+    // the 3rd  halving to ensure fair distribution before such impactful changes can be made to the contract.
     // // Set function allows the owner of the contract to change the _allUsersEarn variable
     // function setAllUsersEarn(bool value) external onlyOwner {
     //     _allUsersEarn = value;
