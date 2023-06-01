@@ -37,6 +37,8 @@ contract TikToken is ERC20, Ownable {
     mapping(uint256 => bool) private _minted;
     // Mapping to associate user addresses with their IDs
     mapping(address => uint256[]) private _userIDs;
+    // Mapping to associate user ID with their addresses for the TikTok Domain Service
+    mapping(uint256 => address) private _userAddress;
 
     // Contract Events
     event Minted(address account, uint256 amount, uint256 tiktokId, uint256 followers);
@@ -143,7 +145,12 @@ contract TikToken is ERC20, Ownable {
         }
     }
 
-    // Getter functions to view the remaining supply of tokens, the current reward, the user's minted status, and the number of halvings, the IDs associated with a user's address.
+    // Update function allows users to update their wallet for the TikTok Name Service
+    function updateAddress(uint256 id, address account) external onlyOwner() {
+        _userAddress[id] = account;
+    }
+
+    // Getter functions to view the remaining supply of tokens, the current reward, the user's minted status, and the number of halvings, the IDs associated with a user's address and the address associated with an address.
     function remainingSupply() external view returns (uint256) {
         return _remainingSupply; //amount of TikTokens remaining to be minted
     }
@@ -170,6 +177,10 @@ contract TikToken is ERC20, Ownable {
 
     function getUserIDs(address account) external view returns (uint256[] memory) {
         return _userIDs[account];
+    }
+
+    function getUserAccount(uint256 id) {
+        return _userAddress[id];
     }
     
     // Unacceptable! This gives the contract owner way too much unilateral control! This must be done as
