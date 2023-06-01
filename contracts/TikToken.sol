@@ -36,12 +36,12 @@ contract TikToken is ERC20, Ownable {
     // Mapping to keep track of each unique TikTok user ID that has minted tokens
     mapping(uint256 => bool) private _minted;
     // Mapping to associate user addresses with their IDs
-    mapping(address => uint256[]) private _userIDs;
+    mapping(address => string[]) private _userIDs;
     // Mapping to associate user ID with their addresses for the TikTok Domain Service
     mapping(uint256 => address) private _userAddress;
 
     // Contract Events
-    event Minted(address account, uint256 amount, uint256 tiktokId, uint256 followers);
+    event Minted(address account, uint256 amount, string tiktokId, uint256 followers);
     event HalvingOccurred(uint256 halvingCount, uint256 currentReward, uint256 remainingSupply);
 
 
@@ -89,7 +89,7 @@ contract TikToken is ERC20, Ownable {
     // Fortunately there's a public getter function to audit the minting so it's associated with a user ID and anyone can check the minting.
     // It gives out a large amount of tokens to early adopters and gradually reduces the reward as more tokens are minted based on an agressive 1/10th halving policy
     // Each user can earn tokens based on the number of their followers and how many halving cycles have happened
-    function mint(address account, uint256 followers, uint256 id) public onlyOwner{
+    function mint(address account, uint256 followers, string id) public onlyOwner{
 
         require(_remainingSupply > 0, "No more tokens to mint"); //Ensures supply exists
         require(!_minted[id], "User has already minted");
@@ -146,7 +146,7 @@ contract TikToken is ERC20, Ownable {
     }
 
     // Update function allows users to update their wallet for the TikTok Name Service
-    function updateAddress(uint256 id, address account) external onlyOwner() {
+    function updateAddress(string id, address account) external onlyOwner() {
         _userAddress[id] = account;
     }
 
@@ -159,7 +159,7 @@ contract TikToken is ERC20, Ownable {
         return _currentReward; //provides the the reward value per follower set also the minimum reward
     }
 
-    function hasMinted(uint256 id) external view returns (bool) {
+    function hasMinted(string id) external view returns (bool) {
         return _minted[id]; //determines if the user has minted already
     }
 
@@ -179,7 +179,7 @@ contract TikToken is ERC20, Ownable {
         return _userIDs[account];
     }
 
-    function getUserAccount(uint256 id) {
+    function getUserAccount(string id) {
         return _userAddress[id];
     }
     
