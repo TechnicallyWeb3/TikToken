@@ -1,5 +1,7 @@
 TikToken GitHub
 
+Official Polygon Contract Address: tiktoken.technicallyweb3.eth(0x359c3AD611e377e050621Fb3de1C2f4411684E92)
+
 This is TikToken, a novelty Web3 token using the blockchain to reward TikTok users based on the number of followers they have. It doesn’t have any value and shouldn’t be traded for real money. It’s intended as a satire and educational project and no value will be locked into this. It’s a 0 value token. 
 
 I am TechnicallyWeb3, primarily a TikTok creator focused on educating people about Web3, Blockchain, AI and future technologies. I have always had a career in tech and though I was good at programming I only ever did it as a hobby. With Web3 on the horizon I had to get involved. To educate people so that they understand how the tech works, this way we can work together to avoid the same mistakes we made with the last version of the Web. 
@@ -32,9 +34,7 @@ You may be wondering why 18.08% goes to me. Truthfully, cause I wanted to make i
 
 This means that when the remaining supply drops below 0.4096 (or half of the initial remaining supply of 0.8192) the rewards per 1000 followers drops from 0.00001 to 0.000001 TIK per 1000 followers. This is such an aggressive halving cycle there should be enough TIK tokens for decades to come. 
 
-The idea is that we offer more value to those with more followers who are around sooner. So what is 1000 followers worth? Let’s find out. But really I’m giving the tokens away for free, forever! Hopefully this discourages people from buying these tokens. 
-
-Polygon Contract Address: 0x359c3AD611e377e050621Fb3de1C2f4411684E92
+The idea is that we offer more value to those with more followers who are around sooner. So what is 1000 followers worth? Let’s find out. But really I’m giving the tokens away for free, forever! Hopefully this discourages people from buying these tokens. 11
 
 
 REMIX DEFAULT WORKSPACE
