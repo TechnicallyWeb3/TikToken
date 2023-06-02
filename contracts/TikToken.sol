@@ -149,7 +149,7 @@ contract TikToken is ERC20, Ownable {
     // This will allow a user to update the wallet associated with their ID, in future this could enable sending crypto tokens to a handle instead of an address
     function updateAddress(string calldata id, address account) public onlyOwner() {
         address oldAccount = _userAddress[id];
-        emit AddressUpdated(id, oldAddress, account);
+        emit AddressUpdated(id, oldAccount, account);
         _userAddress[id] = account;
         _userIDs[account].push(id);
     }

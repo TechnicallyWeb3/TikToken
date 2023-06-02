@@ -34,7 +34,7 @@ This means that when the remaining supply drops below 0.4096 (or half of the ini
 
 The idea is that we offer more value to those with more followers who are around sooner. So what is 1000 followers worth? Let’s find out. But really I’m giving the tokens away for free, forever! Hopefully this discourages people from buying these tokens. 
 
-Mumbai Testnet Contract Address: 0x903801DB36C809f03A2CAa162987cc1409F2676C
+Polygon Contract Address: 0x359c3AD611e377e050621Fb3de1C2f4411684E92
 
 
 REMIX DEFAULT WORKSPACE
